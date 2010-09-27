@@ -12,16 +12,22 @@ Commands:
         Print this list.
 
     list [<host> [<host>...]]
-        List locally controlled crontabs.
+        List all crontabs. If <host> is given, list crontabs for <host>.
 
     show <user> <host>
-        Show the local crontab for <user> on <host>.
+        Show the crontab for <user> on <host>.
+
+    edit <user> <host>
+        Edit the crontab for <user> on <host>
 
     pull <user> <host>
         Pull the remote crontab for <user> on <host> into the local database.
 
     push <user> <host>
-        Push the local crontab to <user> on <host>.
+        Push from the local database to the remote crontab for <user> on <host>.
+
+    pushall [<host> [<host>...]]
+        Push all crontabs. If <host> is given, push all crontabs for <host>.
 
 EOF
     exit 1
