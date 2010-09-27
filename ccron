@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Create the subdirectory for a specific host.
+function _ccron_mkdir
+{
+    mkdir -p ${CCRON_ARCHIVE}/${1} || exit 1
+}
+
+# Verify that we have a crontab for a specific user and host.
+function _ccron_verify_local
+{
+    [ ${#} -eq 2 ] || exit 1
+    if [ ! -s ${CCRON_ARCHIVE}/${2}/${1} ]
+    then
+        echo "There is no local crontab for ${1}@${2}"
+        exit 1
+    fi
+}
+
 # Show help and exit.
 function ccron_help
 {
@@ -37,36 +54,19 @@ EOF
 function ccron_config
 {
     [ -s ~/.ccronrc ] || cat >~/.ccronrc << "EOF"
-# Where the crontab files should be stored
+# Where the crontab files should be stored.
 CCRON_ARCHIVE=~/.ccron
 
 # Where we can store temporary files.
 CCRON_TEMP=/tmp
 
-# How to invoke the commit function for your source control system
+# How to invoke the commit function for your source control system.
 CCRON_COMMIT="git commit"
 
 # Should we automatically push new crontabs?
 CCRON_AUTOPUSH=1
 EOF
     ${EDITOR} ~/.ccronrc
-}
-
-# Create the subdirectory for a specific host.
-function ccron_mkdir
-{
-    mkdir -p ${CCRON_ARCHIVE}/${1} || exit 1
-}
-
-# Verify that we have a crontab for a specific user and host.
-function ccron_verify_local
-{
-    [ ${#} -eq 2 ] || exit 1
-    if [ ! -s ${CCRON_ARCHIVE}/${2}/${1} ]
-    then
-        echo "There is no local crontab for ${1}@${2}"
-        exit 1
-    fi
 }
 
 # List the local crontabs that we have.
@@ -85,7 +85,7 @@ function ccron_list
 function ccron_show
 {
     [ ${#} -eq 2 ] || ccron_help
-    ccron_verify_local ${1} ${2}
+    _ccron_verify_local ${1} ${2}
     cat ${CCRON_ARCHIVE}/${2}/${1}
 }
 
@@ -93,7 +93,7 @@ function ccron_show
 function ccron_edit
 {
     [ ${#} -eq 2 ] || ccron_help
-    ccron_mkdir ${2}
+    _ccron_mkdir ${2}
     ${EDITOR} ${CCRON_ARCHIVE}/${2}/${1}
     if [ ${CCRON_AUTOPUSH} -eq 1 ]
     then
@@ -106,9 +106,18 @@ function ccron_pull
 {
     [ ${#} -eq 2 ] || ccron_help
     ssh -l ${1} ${2} "crontab -l" >${CCRON_TEMP}/ccron.${$} 2>/dev/null
+
+    # Strip off our warning header for local storage.
+    grep -q "^# DO NOT EDIT - this crontab maintained via ccron by" ${CCRON_TEMP}/ccron.${$}
+    if [ ${?} -eq 0 ]
+    then
+        tail -n +5 ${CCRON_TEMP}/ccron.${$} >${CCRON_TEMP}/ccron.${$}.new
+        mv ${CCRON_TEMP}/ccron.${$}.new ${CCRON_TEMP}/ccron.${$}
+    fi
+
     if [ -s ${CCRON_TEMP}/ccron.${$} ]
     then
-        ccron_mkdir ${2}
+        _ccron_mkdir ${2}
         mv ${CCRON_TEMP}/ccron.${$} ${CCRON_ARCHIVE}/${2}/${1}
         cat ${CCRON_ARCHIVE}/${2}/${1}
     else
@@ -120,7 +129,7 @@ function ccron_pull
 function ccron_push
 {
     [ ${#} -eq 2 ] || ccron_help
-    ccron_verify_local ${1} ${2}
+    _ccron_verify_local ${1} ${2}
     echo -n "${1}@${2}: "
     {
         echo -e "#\n# DO NOT EDIT - this crontab maintained via ccron by $(whoami)@$(hostname)\n#\n";
@@ -156,7 +165,7 @@ fi
 # Make sure the archive directory has been created.
 if [ ! -d ${CCRON_ARCHIVE} ]
 then
-    ccron_mkdir
+    _ccron_mkdir
 fi
 
 # Figure out what command we're running.
