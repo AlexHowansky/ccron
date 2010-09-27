@@ -115,6 +115,7 @@ function ccron_push
 {
     [ ${#} -eq 2 ] || ccron_help
     ccron_verify_local ${1} ${2}
+    echo -n "${1}@${2}: "
     {
         echo -e "#\n# DO NOT EDIT - this crontab maintained via ccron by $(whoami)@$(hostname)\n#\n";
         cat ${CCRON_ARCHIVE}/${2}/${1};
@@ -127,9 +128,16 @@ function ccron_pullall
     echo pull all
 }
 
+# Push all local crontabs.
 function ccron_pushall
 {
-    echo push all
+    for HOSTNAME in ${@:-$(ls ${CCRON_ARCHIVE})}
+    do
+        for USERNAME in $(ls ${CCRON_ARCHIVE}/${HOSTNAME})
+        do
+            ccron_push ${USERNAME} ${HOSTNAME}
+        done
+    done
 }
 
 # If this is the first run, create the config file and show the help.
