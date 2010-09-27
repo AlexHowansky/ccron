@@ -29,28 +29,28 @@ Commands:
         Print this list.
 
     list [<host> [<host>...]]
-        List all crontabs. If <host> is given, list crontabs for <host>.
+        List all local crontabs. If <host> is given, list for <host>.
 
     show <user> <host>
-        Show the crontab for <user> on <host>.
+        Show the local crontab for <user> on <host>.
 
     edit <user> <host>
-        Edit the crontab for <user> on <host>
+        Edit the local crontab for <user> on <host>
+
+    ignore <user> <host>
+        Remove the local crontab for <user> on <host> and leave the remote intact.
 
     drop <user> <host>
-        Remove the crontab for <user> on <host> from the local database.
-
-    dropall [<host> [<host>...]]
-        Remove all crontabs. If <host> is given, remove crontabs for <host>.
+        Remove the local and remote crontabs for <user> on <host>.
 
     pull <user> <host>
-        Pull the remote crontab for <user> on <host> into the local database.
+        Import the remote crontab for <user> on <host> into the local database.
 
     push <user> <host>
-        Push from the local database to the remote crontab for <user> on <host>.
+        Export the local crontab for <user> on <host> to the remote host.
 
     pushall [<host> [<host>...]]
-        Push all crontabs. If <host> is given, push all crontabs for <host>.
+        Export all local crontabs. If <host> is given, export all crontabs for <host>.
 
 EOF
     exit 1
@@ -104,26 +104,19 @@ function ccron_edit
     fi
 }
 
-# Drop a specific local crontab.
-function ccron_drop
+# Stop managing a specific crontab.
+function ccron_ignore
 {
     [ ${#} -eq 2 ] || ccron_help
     _ccron_verify_local ${1} ${2}
     rm ${CCRON_ARCHIVE}/${2}/${1}
-    ssh -l ${1} ${2} 'crontab -r'
-    echo "${1}@${2} dropped"
 }
 
-# Drop all local crontabs.
-function ccron_dropall
+# Drop a specific crontab.
+function ccron_drop
 {
-    for HOSTNAME in ${@:-$(ls ${CCRON_ARCHIVE})}
-    do
-        for USERNAME in $(ls ${CCRON_ARCHIVE}/${HOSTNAME})
-        do
-            ccron_drop ${USERNAME} ${HOSTNAME}
-        done
-    done
+    ccron_ignore ${1} ${2}
+    ssh -l ${1} ${2} 'crontab -r'
 }
 
 # Pull a crontab from a particular user and host into the local database.
