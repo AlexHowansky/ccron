@@ -60,10 +60,7 @@ CCRON_ARCHIVE=~/.ccron
 # Where we can store temporary files.
 CCRON_TEMP=/tmp
 
-# How to invoke the commit function for your source control system.
-CCRON_COMMIT="git commit"
-
-# Should we automatically push new crontabs?
+# Should we automatically push new edits?
 CCRON_AUTOPUSH=1
 EOF
     ${EDITOR} ~/.ccronrc
