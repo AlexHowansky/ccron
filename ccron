@@ -39,6 +39,9 @@ CCRON_TEMP=/tmp
 
 # How to invoke the commit function for your source control system
 CCRON_COMMIT="git commit"
+
+# Should we automatically push new crontabs?
+CCRON_AUTOPUSH=1
 EOF
     ${EDITOR} ~/.ccronrc
 }
@@ -86,6 +89,10 @@ function ccron_edit
     [ ${#} -eq 2 ] || ccron_help
     ccron_mkdir ${2}
     ${EDITOR} ${CCRON_ARCHIVE}/${2}/${1}
+    if [ ${CCRON_AUTOPUSH} -eq 1 ]
+    then
+        ccron_push ${1} ${2}
+    fi
 }
 
 # Pull a crontab from a particular user and host into the local database.
@@ -107,8 +114,11 @@ function ccron_pull
 function ccron_push
 {
     [ ${#} -eq 2 ] || ccron_help
-    ssh -l ${1} ${2} "crontab -e"
-    echo ${CCRON_COMMIT} ${CCRON_ARCHIVE}/${2}/${1}
+    ccron_verify_local ${1} ${2}
+    {
+        echo -e "#\n# DO NOT EDIT - this crontab maintained via ccron by $(whoami)@$(hostname)\n#\n";
+        cat ${CCRON_ARCHIVE}/${2}/${1};
+    } | ssh -l ${1} ${2} 'EDITOR="cat>" crontab -e'
 }
 
 # Pull all known crontabs.
