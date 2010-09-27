@@ -128,12 +128,6 @@ function ccron_push
     } | ssh -l ${1} ${2} 'EDITOR="cat>" crontab -e'
 }
 
-# Pull all known crontabs.
-function ccron_pullall
-{
-    echo pull all
-}
-
 # Push all local crontabs.
 function ccron_pushall
 {
