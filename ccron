@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Show help and exit.
 function ccron_help
 {
     cat << EOF
@@ -26,6 +27,7 @@ EOF
     exit 1
 }
 
+# Edit the config file, creating it if it doesn't exist.
 function ccron_config
 {
     [ -s ~/.ccronrc ] || cat >~/.ccronrc << "EOF"
@@ -41,11 +43,13 @@ EOF
     ${EDITOR} ~/.ccronrc
 }
 
+# Create the subdirectory for a specific host.
 function ccron_mkdir
 {
     mkdir -p ${CCRON_ARCHIVE}/${1} || exit 1
 }
 
+# Verify that we have a crontab for a specific user and host.
 function ccron_verify_local
 {
     [ ${#} -eq 2 ] || exit 1
@@ -56,6 +60,7 @@ function ccron_verify_local
     fi
 }
 
+# List the local crontabs that we have.
 function ccron_list
 {
     for HOSTNAME in ${@:-$(ls ${CCRON_ARCHIVE})}
@@ -67,6 +72,7 @@ function ccron_list
     done
 }
 
+# Show the contents of a specific local crontab.
 function ccron_show
 {
     [ ${#} -eq 2 ] || ccron_help
@@ -74,6 +80,7 @@ function ccron_show
     cat ${CCRON_ARCHIVE}/${2}/${1}
 }
 
+# Edit a specific local crontab.
 function ccron_edit
 {
     [ ${#} -eq 2 ] || ccron_help
@@ -81,6 +88,7 @@ function ccron_edit
     ${EDITOR} ${CCRON_ARCHIVE}/${2}/${1}
 }
 
+# Pull a crontab from a particular user and host into the local database.
 function ccron_pull
 {
     [ ${#} -eq 2 ] || ccron_help
@@ -95,6 +103,7 @@ function ccron_pull
     fi
 }
 
+# Push a local crontab to a remote user and host.
 function ccron_push
 {
     [ ${#} -eq 2 ] || ccron_help
@@ -113,25 +122,32 @@ function ccron_pushall
     echo push all
 }
 
+# If this is the first run, create the config file and show the help.
 if [ ! -s ~/.ccronrc ]
 then
     ccron_config
     ccron_help
 fi
 
+# Nothing to do, show the help.
 [ ${#} -eq 0 ] && ccron_help
 
+# Source the config file.
 . ~/.ccronrc
 
+# Make sure the archive directory has been created.
 if [ ! -d ${CCRON_ARCHIVE} ]
 then
     ccron_mkdir
 fi
 
+# Figure out what command we're running.
 COMMAND=${1}
 FUNCTION="ccron_${COMMAND}"
 shift
 
+# If it's unknown, show the help.
 [ "$(type -t ${FUNCTION})" == "function" ] || ccron_help
 
+# Otherwise, run it.
 ${FUNCTION} ${@}
