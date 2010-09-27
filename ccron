@@ -67,7 +67,7 @@ CCRON_ARCHIVE=~/.ccron
 CCRON_TEMP=/tmp
 
 # Should we automatically push new edits?
-CCRON_AUTOPUSH=1
+CCRON_AUTOPUSH=0
 EOF
     ${EDITOR} ~/.ccronrc
 }
