@@ -10,11 +10,14 @@ Commands:
     help
         Print this list.
 
+    list [<host> [<host>...]]
+        List locally controlled crontabs.
+
     show <user> <host>
-        Show the existing local crontab for <user> on <host>.
+        Show the local crontab for <user> on <host>.
 
     pull <user> <host>
-        Pull the existing crontab for <user> on <host> into the local database.
+        Pull the remote crontab for <user> on <host> into the local database.
 
     push <user> <host>
         Push the local crontab to <user> on <host>.
@@ -51,6 +54,17 @@ function ccron_verify_local
         echo "There is no local crontab for ${1}@${2}"
         exit 1
     fi
+}
+
+function ccron_list
+{
+    for HOSTNAME in ${@:-$(ls ${CCRON_ARCHIVE})}
+    do
+        for USERNAME in $(ls ${CCRON_ARCHIVE}/${HOSTNAME})
+        do
+            echo "${USERNAME}@${HOSTNAME}"
+        done
+    done
 }
 
 function ccron_show
@@ -108,6 +122,11 @@ fi
 [ ${#} -eq 0 ] && ccron_help
 
 . ~/.ccronrc
+
+if [ ! -d ${CCRON_ARCHIVE} ]
+then
+    ccron_mkdir
+fi
 
 COMMAND=${1}
 FUNCTION="ccron_${COMMAND}"
