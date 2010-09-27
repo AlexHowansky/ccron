@@ -1,0 +1,118 @@
+#!/bin/bash
+
+function ccron_help
+{
+    cat << EOF
+Usage: ${0} <command> [<options>]
+
+Commands:
+
+    help
+        Print this list.
+
+    show <user> <host>
+        Show the existing local crontab for <user> on <host>.
+
+    pull <user> <host>
+        Pull the existing crontab for <user> on <host> into the local database.
+
+    push <user> <host>
+        Push the local crontab to <user> on <host>.
+
+EOF
+    exit 1
+}
+
+function ccron_config
+{
+    [ -s ~/.ccronrc ] || cat >~/.ccronrc << "EOF"
+# Where the crontab files should be stored
+CCRON_ARCHIVE=~/.ccron
+
+# Where we can store temporary files.
+CCRON_TEMP=/tmp
+
+# How to invoke the commit function for your source control system
+CCRON_COMMIT="git commit"
+EOF
+    ${EDITOR} ~/.ccronrc
+}
+
+function ccron_mkdir
+{
+    mkdir -p ${CCRON_ARCHIVE}/${1} || exit 1
+}
+
+function ccron_verify_local
+{
+    [ ${#} -eq 2 ] || exit 1
+    if [ ! -s ${CCRON_ARCHIVE}/${2}/${1} ]
+    then
+        echo "There is no local crontab for ${1}@${2}"
+        exit 1
+    fi
+}
+
+function ccron_show
+{
+    [ ${#} -eq 2 ] || ccron_help
+    ccron_verify_local ${1} ${2}
+    cat ${CCRON_ARCHIVE}/${2}/${1}
+}
+
+function ccron_edit
+{
+    [ ${#} -eq 2 ] || ccron_help
+    ccron_mkdir ${2}
+    ${EDITOR} ${CCRON_ARCHIVE}/${2}/${1}
+}
+
+function ccron_pull
+{
+    [ ${#} -eq 2 ] || ccron_help
+    ssh -l ${1} ${2} "crontab -l" >${CCRON_TEMP}/ccron.${$} 2>/dev/null
+    if [ -s ${CCRON_TEMP}/ccron.${$} ]
+    then
+        ccron_mkdir ${2}
+        mv ${CCRON_TEMP}/ccron.${$} ${CCRON_ARCHIVE}/${2}/${1}
+        cat ${CCRON_ARCHIVE}/${2}/${1}
+    else
+        echo "No remote crontab found for ${1}@${2}."
+    fi
+}
+
+function ccron_push
+{
+    [ ${#} -eq 2 ] || ccron_help
+    ssh -l ${1} ${2} "crontab -e"
+    echo ${CCRON_COMMIT} ${CCRON_ARCHIVE}/${2}/${1}
+}
+
+# Pull all known crontabs.
+function ccron_pullall
+{
+    echo pull all
+}
+
+function ccron_pushall
+{
+    echo push all
+}
+
+if [ ! -s ~/.ccronrc ]
+then
+    ccron_config
+    ccron_help
+fi
+
+[ ${#} -eq 0 ] && ccron_help
+
+. ~/.ccronrc
+
+COMMAND=${1}
+FUNCTION="ccron_${COMMAND}"
+shift
+
+[ "$(type -t ${FUNCTION})" == "function" ] || ccron_help
+
+${FUNCTION} ${@}
