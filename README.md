@@ -25,7 +25,7 @@ To manage an existing remote crontab, it must first be imported into the local d
 
     ccron pull <user> <host>
 
-To edit an existing or create a new local crontab, use the `edit` command.
+To edit an existing local crontab or create a new empty local crontab, use the `edit` command.
 
     ccron edit <user> <host>
 
@@ -33,11 +33,11 @@ To list all the local crontabs, use the `list` command.
 
     ccron list
 
-This list command can also take optional arguments to filter for a specfic host.
+The list command can also take optional arguments to filter for a specfic host.
 
     ccron list <host>
 
-To export a local crontab back to its remote host (so that it starts running), use the `push` command. If you have the autopush option enabled in your configuration file, a push will automatically be performed after an edit.
+To export a local crontab back to its remote host (so that it starts running), use the `push` command. If you have the autopush option enabled in your configuration file, a push will automatically be performed after an edit. The autopush behavior is more inline with how `crontab -e` works, but is disabled by default for safety.
 
     ccron push <user> <host>
 
