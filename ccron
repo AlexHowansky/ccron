@@ -37,6 +37,12 @@ Commands:
     edit <user> <host>
         Edit the crontab for <user> on <host>
 
+    drop <user> <host>
+        Remove the crontab for <user> on <host> from the local database.
+
+    dropall [<host> [<host>...]]
+        Remove all crontabs. If <host> is given, remove crontabs for <host>.
+
     pull <user> <host>
         Pull the remote crontab for <user> on <host> into the local database.
 
@@ -98,6 +104,28 @@ function ccron_edit
     fi
 }
 
+# Drop a specific local crontab.
+function ccron_drop
+{
+    [ ${#} -eq 2 ] || ccron_help
+    _ccron_verify_local ${1} ${2}
+    rm ${CCRON_ARCHIVE}/${2}/${1}
+    ssh -l ${1} ${2} 'crontab -r'
+    echo "${1}@${2} dropped"
+}
+
+# Drop all local crontabs.
+function ccron_dropall
+{
+    for HOSTNAME in ${@:-$(ls ${CCRON_ARCHIVE})}
+    do
+        for USERNAME in $(ls ${CCRON_ARCHIVE}/${HOSTNAME})
+        do
+            ccron_drop ${USERNAME} ${HOSTNAME}
+        done
+    done
+}
+
 # Pull a crontab from a particular user and host into the local database.
 function ccron_pull
 {
@@ -128,11 +156,12 @@ function ccron_push
 {
     [ ${#} -eq 2 ] || ccron_help
     _ccron_verify_local ${1} ${2}
-    echo -n "${1}@${2}: "
+    echo "${1}@${2}: "
     {
         echo -e "#\n# DO NOT EDIT - this crontab maintained via ccron by $(whoami)@$(hostname)\n#\n";
         cat ${CCRON_ARCHIVE}/${2}/${1};
     } | ssh -l ${1} ${2} 'EDITOR="cat>" crontab -e'
+    echo
 }
 
 # Push all local crontabs.
