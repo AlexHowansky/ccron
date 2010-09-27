@@ -122,6 +122,7 @@ function ccron_pull
         cat ${CCRON_ARCHIVE}/${2}/${1}
     else
         echo "No remote crontab found for ${1}@${2}."
+        rm ${CCRON_TEMP}/ccron.${$}
     fi
 }
 
