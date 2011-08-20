@@ -169,6 +169,13 @@ function ccron_pushall
     done
 }
 
+# Make sure we have an EDITOR.
+if [ -z ${EDITOR} ]
+then
+    echo "Please set the EDITOR environment variable to use ccron."
+    exit 1
+fi
+
 # If this is the first run, create the config file and show the help.
 if [ ! -s ~/.ccronrc ]
 then
