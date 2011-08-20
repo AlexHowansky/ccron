@@ -66,7 +66,10 @@ CCRON_ARCHIVE=~/.ccron
 # Where we can store temporary files.
 CCRON_TEMP=/tmp
 
-# Should we automatically push new edits?
+# Should we automatically pull a new crontab when asked to edit one that we don't currently have?
+CCRON_AUTOPULL=0
+
+# Should we automatically push newly saved edits to the remote host?
 CCRON_AUTOPUSH=0
 EOF
     ${EDITOR} ~/.ccronrc
@@ -96,10 +99,16 @@ function ccron_show
 function ccron_edit
 {
     [ ${#} -eq 2 ] || ccron_help
+    if [ ! -s ${CCRON_ARCHIVE}/${2}/${1} -a ${CCRON_AUTOPULL} -eq 1 ]
+    then
+        echo "Autopulling..."
+        ccron_pull ${1} ${2}
+    fi
     _ccron_mkdir ${2}
     ${EDITOR} ${CCRON_ARCHIVE}/${2}/${1}
     if [ ${CCRON_AUTOPUSH} -eq 1 ]
     then
+        echo "Autopushing..."
         ccron_push ${1} ${2}
     fi
 }
